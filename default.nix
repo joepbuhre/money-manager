@@ -22,6 +22,8 @@
 with pkgs;
 
 mkShell {
+  PROJECT_ROOT = builtins.toString ./.;
+
   buildInputs = [
     nodejs_20
     go
@@ -35,31 +37,54 @@ mkShell {
     air
 
     http-server
+    sqlc
   ];
   shellHook = ''
-    export PATH="$PATH:/home/jbuhre/development/joepbuhre/snappic/backend/.gopath/bin"
-    export GOPATH="/home/jbuhre/development/joepbuhre/snappic/backend/.gopath"
+    export CUR_DIR=/home/jbuhre/development/joepbuhre/money-manager
+    export PATH="$PATH:$CUR_DIR/backend/.gopath/bin"
+    export GOPATH="$CUR_DIR/backend/.gopath"
 
-    create-migration() {
-        # Check if at least one argument is provided
-        if [ $# -lt 1 ]; then
-            echo "Usage: create-migration <migration_name>"
-            return 1
-        fi
+    start() {
+      cd "$CUR_DIR"
+      # Check if at least one argument is provided
+      if [ $# -lt 1 ]; then
+          echo "Usage: start (frontend | backend)" 
+          return 1
+      fi
 
-        # Get the current date in the format yyyyMMdd
-        local current_date=$(date +"%Y%m%d")
+      # Get the argument
+      service=$1
 
-        # Concatenate the date and the first argument
-        localfilename="''${current_date}_$1.sql"
+      # Define the function to start the service
+      start_service() {
+          local dir=$1
+          if [ "$(basename "$PWD")" != "$dir" ]; then
+              echo "Changing directory to $dir"
+              cd $dir || { echo "Failed to change directory to $dir"; return 1; }
+          fi
+          echo "Starting $dir..."
+      }
 
-        full_filename="$(pwd)/backend/database/migrations/$localfilename"
-        echo "-- migration [$localfilename]" > "$full_filename"
+      # Start the frontend or backend service based on the argument
+      case $service in
+          "frontend")
+              start_service "frontend"
+              npm run dev
+              ;;
+          "backend")
+              start_service "backend"
+              air
+              ;;
+          *)
+              echo "Invalid argument. Usage: start (frontend | backend)"
+              return 1
+              ;;
+      esac
+  }
 
-        code $full_filename
-    }
 
     alias start-backend="cd backend && air"
     alias start-frontend="cd frontend && npm run dev"
+    alias tern="tern -m $CUR_DIR/migrations"
   '';
 }
