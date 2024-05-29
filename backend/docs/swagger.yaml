@@ -15,7 +15,24 @@ info:
   termsOfService: http://swagger.io/terms/
   title: Swagger Example API
   version: "1.0"
-paths: {}
+paths:
+  /login:
+    post:
+      operationId: Login-user
+      produces:
+      - application/json
+      responses: {}
+  /users:
+    get:
+      operationId: create-user
+      produces:
+      - application/json
+      responses: {}
+    post:
+      operationId: create-user
+      produces:
+      - application/json
+      responses: {}
 securityDefinitions:
   ApiKeyAuth:
     in: header

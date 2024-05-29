@@ -8,8 +8,15 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Author struct {
-	ID   int64
-	Name string
-	Bio  pgtype.Text
+type User struct {
+	ID       int32       `json:"id"`
+	Username string      `json:"username"`
+	Name     string      `json:"name"`
+	Email    pgtype.Text `json:"email"`
+}
+
+type UserToken struct {
+	ID     int32  `json:"id"`
+	UserID int32  `json:"user_id"`
+	Token  string `json:"token"`
 }

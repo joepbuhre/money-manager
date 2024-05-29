@@ -1,74 +1,104 @@
 package routers
 
-// func AddUserRouter(rg *gin.RouterGroup, db *sql.DB) {
-// 	usersPublic := rg.Group("/users")
-// 	usersPrivate := rg.Group("/users")
+import (
+	"context"
+	"log"
+	"money-manager/database"
+	"money-manager/utils"
+	"net/http"
 
-// 	usersPrivate.Use(mw.GetAuthMiddleware(db))
-// 	usersPublic.POST("/create", createUser(db))
-// 	usersPublic.POST("/login", loginUser(db))
+	"github.com/gin-gonic/gin"
+	"github.com/pjebs/jsonerror"
+)
 
-// usersPrivate.GET("/me", func(c *gin.Context) {
-// 	var user, err = GetUserFromContext(c)
-// 	if err != nil {
-// 		c.AbortWithStatusJSON(http.StatusBadGateway, gin.H{"error": err.Error()})
-// 		return
-// 	}
+func AddUserRouter(rg *gin.RouterGroup, env *utils.Env) {
+	public := rg.Group("/users")
 
-// 	c.JSON(http.StatusOK, user)
-// })
-// }
+	public.GET("/", GetUser(env))
+
+	public.POST("/", CreateUser(env))
+	public.POST("/login", LoginUser(env))
+
+}
 
 // Create a request to upload a specific file.
 //
 //	@ID			create-user
 //	@Produce	json
-//	@Success	200	{object}	database.User
-//	@Router		/create-user [post]
-// func createUser(db *sql.DB) gin.HandlerFunc {
-// 	return func(c *gin.Context) {
+//	@Router		/users [get]
+func GetUser(env *utils.Env) gin.HandlerFunc {
 
-// 		var err error
+	return func(c *gin.Context) {
+		var users, _ = env.Queries.ListUsers(context.Background())
+		log.Println(users)
 
-// 		defer func() {
-// 			if err != nil {
-// 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			} else if len(c.Errors) > 0 {
-// 				c.JSON(http.StatusBadRequest, c.Errors[0])
-// 			}
-// 		}()
+		c.JSON(http.StatusOK, users)
+	}
+}
 
-// 		var user database.User
-// 		_, err = routers.ReadRequestBody(c, &user)
-// 		if err != nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{"error": "error"})
-// 			return
-// 		}
+// Create a user.
+//
+//	@ID			create-user
+//	@Produce	json
+//	@Router		/users [post]
+func CreateUser(env *utils.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var err error
+		var newUser database.CreateUserParams
+		_, err = utils.ReadRequestBody(c, &newUser)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "error"})
+			return
+		}
 
-// 		// Small validation on username password
-// 		if user.Username == "" || user.Password == "" {
-// 			c.Error(errors.New("either username or password is empty"))
-// 			return
-// 		}
+		var user database.User
+		user, err = env.Queries.CreateUser(c, newUser)
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "err"})
+			return
+		}
+		c.JSON(http.StatusOK, user)
 
-// 		// var stmt *sql.Stmt
-// 		// stmt, err = db.Prepare("insert into users (username, password) values ($1, $2)")
-// 		// if err != nil {
-// 		// 	c.Error(err)
-// 		// 	return
-// 		// }
+	}
+}
 
-// 		user, err = database.CreateUser(user, db)
-// 		if err != nil {
-// 			c.Error(err)
-// 			return
-// 		}
+// Login a user.
+//
+//	@ID			Login-user
+//	@Produce	json
+//	@Router		/login [post]
+func LoginUser(env *utils.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var err error
+		var token string
+		var errors utils.JsonErrors
 
-// 		c.JSON(http.StatusOK, user)
+		// Check if token is still valid...
+		// env.Queries.GetUserFromToken(context.Background() )
 
-// 	}
+		token, err = utils.GenerateSecureToken(40)
+		if err != nil {
+			errors.Add(jsonerror.New(1, "Something went wrong with token", ""))
+			c.AbortWithStatusJSON(http.StatusBadRequest, errors.ToString())
+			return
+		}
 
-// }
+		var returnToken database.UserToken
+		returnToken, err = env.Queries.LoginUser(context.Background(), database.LoginUserParams{
+			UserID: 1,
+			Token:  token,
+		})
+
+		if err != nil {
+			errors.Add(jsonerror.New(1, "Something went wrong with logging in user", ""))
+			c.AbortWithStatusJSON(http.StatusBadRequest, errors.ToString())
+		}
+
+		c.JSON(http.StatusOK, returnToken)
+
+	}
+}
 
 // // Create a request to login a user
 // //

@@ -23,7 +23,33 @@ const docTemplate = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {},
+    "paths": {
+        "/login": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "operationId": "Login-user",
+                "responses": {}
+            }
+        },
+        "/users": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "operationId": "create-user",
+                "responses": {}
+            },
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "operationId": "create-user",
+                "responses": {}
+            }
+        }
+    },
     "securityDefinitions": {
         "ApiKeyAuth": {
             "type": "apiKey",

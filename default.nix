@@ -85,6 +85,6 @@ mkShell {
 
     alias start-backend="cd backend && air"
     alias start-frontend="cd frontend && npm run dev"
-    alias tern="tern -m $CUR_DIR/migrations"
+    alias goose="goose --dir $CUR_DIR/sql/migrations create"
   '';
 }
