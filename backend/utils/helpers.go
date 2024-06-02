@@ -83,6 +83,9 @@ type JsonErrorsString struct {
 
 func (e *JsonErrors) Add(err map[int]jsonerror.JE) {
 	e.errors = append(e.errors, err)
+	for _, er := range err {
+		log.Println(er.Error())
+	}
 }
 
 func (e *JsonErrors) AddWoError(err jsonerror.JE) {

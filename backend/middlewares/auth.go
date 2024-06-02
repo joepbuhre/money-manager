@@ -115,7 +115,7 @@ func (am *AuthMiddleware) handleSession(c *gin.Context, auth SessionAuth) bool {
 	// We also set the userid in the context of gin
 	if err == nil && id > 0 {
 		//Authentication PASSED
-		log.Printf("Setting userid to %i", id)
+		log.Println("Setting userid to ", id)
 		c.Set("UserId", id)
 		return true
 	} else { //==sql.ErrNoRows or count == 0:: At this point authenticaton has been supplied but no valid rows has been given
@@ -213,7 +213,7 @@ func (am *AuthMiddleware) ServeHTTP(c *gin.Context, next http.HandlerFunc) {
 	}
 
 	// Apparently we have no valid authentication here, so we are exiting, but only if no auth has been failed yet
-	if allowed == false && am.errors.HasErrors() == false {
+	if !allowed && !am.errors.HasErrors() {
 		log.Println("No valid auth has been provided,")
 		am.errors.Add(u.ApiErrors[u.ErrAuthNotSupplied])
 	}

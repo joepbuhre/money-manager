@@ -1,30 +1,40 @@
 package utils
 
-import e "github.com/pjebs/jsonerror"
+import (
+	"net/http"
+
+	e "github.com/pjebs/jsonerror"
+)
 
 // ErrorType is an enum type for various error categories
-type ErrorType int
+type ErrorType string
 
 const (
 	// Define the error types
-	ErrInvalidInput ErrorType = iota
-	ErrNotFound
-	ErrInternal
-	ErrUnauthorized
-	ErrForbidden
-	ErrAuthNotSetup
-	ErrUsersSomethingWrong
-	ErrAuthNotSupplied
+	ErrInvalidInput        ErrorType = "INVALID_INPUT"
+	ErrNotFound            ErrorType = "NOT_FOUND"
+	ErrInternal            ErrorType = "INTERNAL"
+	ErrUnauthorized        ErrorType = "UNAUTHORIZED"
+	ErrForbidden           ErrorType = "FORBIDDEN"
+	ErrAuthNotSetup        ErrorType = "AUTH_NOT_SETUP"
+	ErrUsersSomethingWrong ErrorType = "USERS_SOMETHING_WRONG"
+	ErrAuthNotSupplied     ErrorType = "AUTH_NOT_SUPPLIED"
 )
 
+func createError(statusCode int, errorCode ErrorType, message string) map[int]e.JE {
+	var mp = make(map[int]e.JE)
+	mp[statusCode] = e.New(statusCode, string(errorCode), message)
+	return mp
+}
+
 var ApiErrors = map[ErrorType]map[int]e.JE{
-	ErrAuthNotSupplied: {401: e.New(int(ErrAuthNotSupplied), "Auth has not been supplied", "")},
-	ErrInvalidInput:    {403: e.New(int(ErrInvalidInput), "Invalid input provided", "")},
-	ErrNotFound:        {403: e.New(int(ErrNotFound), "Resource not found", "")},
-	ErrInternal:        {500: e.New(int(ErrInternal), "Internal server error", "")},
-	ErrUnauthorized:    {403: e.New(int(ErrUnauthorized), "Unauthorized access", "")},
-	ErrForbidden:       {403: e.New(int(ErrForbidden), "Forbidden access", "")},
-	ErrAuthNotSetup:    {403: e.New(int(ErrAuthNotSetup), "Auth has not been setup yet", "")},
+	ErrAuthNotSupplied: createError(401, ErrAuthNotSupplied, "Auth has not been supplied"),
+	ErrInvalidInput:    createError(403, ErrInvalidInput, "Invalid input provided"),
+	ErrNotFound:        createError(403, ErrNotFound, "Resource not found"),
+	ErrInternal:        createError(500, ErrInternal, "Internal server error"),
+	ErrUnauthorized:    createError(403, ErrUnauthorized, "Unauthorized access"),
+	ErrForbidden:       createError(403, ErrForbidden, "Forbidden access"),
+	ErrAuthNotSetup:    createError(403, ErrAuthNotSetup, "Auth has not been setup yet"),
 	// Users.go
-	ErrUsersSomethingWrong: {500: e.New(int(ErrUsersSomethingWrong), "Something went wrong with logging in user", "")},
+	ErrUsersSomethingWrong: createError(http.StatusBadRequest, ErrUsersSomethingWrong, "Something went wrong when logging in user"),
 }
