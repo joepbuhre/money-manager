@@ -70,17 +70,26 @@ func GenerateSecureToken(length int) (string, error) {
 type MultipleErrors []map[string]string
 
 type JsonErrors struct {
-	message string
-	errors  []jsonerror.JE
+	ErrorCode int `json:"-"`
+	message   string
+	errors    []map[int]jsonerror.JE
 }
 
 type JsonErrorsString struct {
-	Message string         `json:"message,omitempty"`
-	Errors  MultipleErrors `json:"errors"`
+	ErrorCode int            `json:"-"`
+	Message   string         `json:"message,omitempty"`
+	Errors    MultipleErrors `json:"errors"`
 }
 
-func (e *JsonErrors) Add(err jsonerror.JE) {
+func (e *JsonErrors) Add(err map[int]jsonerror.JE) {
 	e.errors = append(e.errors, err)
+}
+
+func (e *JsonErrors) AddWoError(err jsonerror.JE) {
+	mp := make(map[int]jsonerror.JE)
+	mp[500] = err
+
+	e.errors = append(e.errors, mp)
 }
 
 func (e *JsonErrors) Message(message string) {
@@ -92,11 +101,21 @@ func (e *JsonErrors) ToString() JsonErrorsString {
 	var ret JsonErrorsString
 
 	for _, err := range e.errors {
-		result = append(result, err.Render())
+		for ecode, mess := range err {
+			if e.ErrorCode == 0 {
+				e.ErrorCode = ecode
+			}
+			result = append(result, mess.Render())
+		}
 	}
 	// Set errors
 	ret.Errors = result
 	ret.Message = e.message
+	ret.ErrorCode = e.ErrorCode
 
 	return ret
+}
+
+func (e *JsonErrors) HasErrors() bool {
+	return len(e.errors) > 0
 }

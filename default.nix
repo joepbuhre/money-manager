@@ -35,7 +35,7 @@ mkShell {
     godef
     golint
     air
-
+    delve
     http-server
     sqlc
   ];
@@ -82,9 +82,12 @@ mkShell {
       esac
   }
 
-
+  create-migration() {
+    result=$(goose --dir $CUR_DIR/backend/sql/migrations create $1 sql 2>&1)
+    path=$(echo $result | sed 's/.*Created new file: //')
+    code "$path" 
+  }
     alias start-backend="cd backend && air"
     alias start-frontend="cd frontend && npm run dev"
-    alias goose="goose --dir $CUR_DIR/sql/migrations create"
   '';
 }

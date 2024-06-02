@@ -38,7 +38,7 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "operationId": "create-user",
+                "operationId": "get-user",
                 "responses": {}
             },
             "post": {
@@ -46,6 +46,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "operationId": "create-user",
+                "responses": {}
+            }
+        },
+        "/users/:userid": {
+            "delete": {
+                "operationId": "delete-user",
                 "responses": {}
             }
         }

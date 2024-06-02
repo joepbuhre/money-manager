@@ -24,7 +24,7 @@ paths:
       responses: {}
   /users:
     get:
-      operationId: create-user
+      operationId: get-user
       produces:
       - application/json
       responses: {}
@@ -32,6 +32,10 @@ paths:
       operationId: create-user
       produces:
       - application/json
+      responses: {}
+  /users/:userid:
+    delete:
+      operationId: delete-user
       responses: {}
 securityDefinitions:
   ApiKeyAuth:

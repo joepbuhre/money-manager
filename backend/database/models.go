@@ -8,11 +8,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type GroupPermission struct {
+	ID        int32       `json:"id"`
+	GroupID   int32       `json:"group_id"`
+	TableName string      `json:"table_name"`
+	CanCreate pgtype.Bool `json:"can_create"`
+	CanRead   pgtype.Bool `json:"can_read"`
+	CanUpdate pgtype.Bool `json:"can_update"`
+	CanDelete pgtype.Bool `json:"can_delete"`
+	ObjectID  pgtype.Int4 `json:"object_id"`
+}
+
 type User struct {
-	ID       int32       `json:"id"`
-	Username string      `json:"username"`
-	Name     string      `json:"name"`
-	Email    pgtype.Text `json:"email"`
+	ID           int32       `json:"id"`
+	Username     string      `json:"username"`
+	Name         string      `json:"name"`
+	Email        pgtype.Text `json:"email"`
+	IsSuperadmin pgtype.Bool `json:"is_superadmin"`
+}
+
+type UserGroup struct {
+	ID      int32 `json:"id"`
+	UserID  int32 `json:"user_id"`
+	GroupID int32 `json:"group_id"`
 }
 
 type UserToken struct {

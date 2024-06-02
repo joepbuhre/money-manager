@@ -4,36 +4,24 @@ import (
 	"context"
 	"log"
 	"money-manager/database"
-	"money-manager/utils"
+	m "money-manager/middlewares"
+	u "money-manager/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pjebs/jsonerror"
 )
 
-func AddUserRouter(rg *gin.RouterGroup, env *utils.Env) {
+func AddUserRouter(rg *gin.RouterGroup, env *u.Env) {
 	public := rg.Group("/users")
 
-	public.GET("/", GetUser(env))
+	public.GET("/", m.IsAllowedTo(env, "users", m.CanRead), GetUsers(env))
 
-	public.POST("/", CreateUser(env))
+	public.POST("/", m.IsAllowedTo(env, "users", m.CanCreate), CreateUser(env))
 	public.POST("/login", LoginUser(env))
 
-}
+	public.DELETE("/:userid", m.IsAllowedTo(env, "users", m.CanDelete), DeleteUser(env))
 
-// Create a request to upload a specific file.
-//
-//	@ID			create-user
-//	@Produce	json
-//	@Router		/users [get]
-func GetUser(env *utils.Env) gin.HandlerFunc {
-
-	return func(c *gin.Context) {
-		var users, _ = env.Queries.ListUsers(context.Background())
-		log.Println(users)
-
-		c.JSON(http.StatusOK, users)
-	}
 }
 
 // Create a user.
@@ -41,11 +29,11 @@ func GetUser(env *utils.Env) gin.HandlerFunc {
 //	@ID			create-user
 //	@Produce	json
 //	@Router		/users [post]
-func CreateUser(env *utils.Env) gin.HandlerFunc {
+func CreateUser(env *u.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var err error
 		var newUser database.CreateUserParams
-		_, err = utils.ReadRequestBody(c, &newUser)
+		_, err = u.ReadRequestBody(c, &newUser)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "error"})
 			return
@@ -63,24 +51,72 @@ func CreateUser(env *utils.Env) gin.HandlerFunc {
 	}
 }
 
+// Get all users.
+//
+//	@ID			get-user
+//	@Produce	json
+//	@Router		/users [get]
+func GetUsers(env *u.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		var users, _ = env.Queries.ListUsers(context.Background())
+		c.JSON(http.StatusOK, users)
+	}
+}
+
+// Delete user
+//
+//	@ID		delete-user
+//	@Router	/users/:userid [delete]
+func DeleteUser(env *u.Env) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var q = env.Queries
+		var idStr string
+		var id int
+		var err error
+		var errors u.JsonErrors
+		idStr = c.Param("userid")
+
+		id, err = strconv.Atoi(idStr)
+		if err != nil {
+			log.Println(err)
+			errors.Add(u.ApiErrors[u.ErrInternal])
+			c.AbortWithStatusJSON(errors.ErrorCode, errors.ToString())
+			return
+		}
+
+		// Delete user here
+		err = q.DeleteUser(context.Background(), int32(id))
+		if err != nil {
+			log.Println(err)
+			errors.Add(u.ApiErrors[u.ErrInternal])
+			c.AbortWithStatusJSON(errors.ErrorCode, errors.ToString())
+			return
+		}
+
+		// Handle an accepted response
+		c.Status(http.StatusAccepted)
+	}
+}
+
 // Login a user.
 //
 //	@ID			Login-user
 //	@Produce	json
 //	@Router		/login [post]
-func LoginUser(env *utils.Env) gin.HandlerFunc {
+func LoginUser(env *u.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var err error
 		var token string
-		var errors utils.JsonErrors
+		var errors u.JsonErrors
 
 		// Check if token is still valid...
 		// env.Queries.GetUserFromToken(context.Background() )
 
-		token, err = utils.GenerateSecureToken(40)
+		token, err = u.GenerateSecureToken(40)
 		if err != nil {
-			errors.Add(jsonerror.New(1, "Something went wrong with token", ""))
-			c.AbortWithStatusJSON(http.StatusBadRequest, errors.ToString())
+			errors.Add(u.ApiErrors[u.ErrForbidden])
+			c.AbortWithStatusJSON(errors.ErrorCode, errors.ToString())
 			return
 		}
 
@@ -91,49 +127,11 @@ func LoginUser(env *utils.Env) gin.HandlerFunc {
 		})
 
 		if err != nil {
-			errors.Add(jsonerror.New(1, "Something went wrong with logging in user", ""))
-			c.AbortWithStatusJSON(http.StatusBadRequest, errors.ToString())
+			errors.Add(u.ApiErrors[u.ErrUsersSomethingWrong])
+			c.AbortWithStatusJSON(errors.ErrorCode, errors.ToString())
 		}
 
 		c.JSON(http.StatusOK, returnToken)
 
 	}
 }
-
-// // Create a request to login a user
-// //
-// //	@ID			login-user
-// //	@Produce	json
-// //	@Param		string	body		database.User	false	"string valid"
-// //	@Success	200		{object}	database.UserToken
-// //	@Router		/users/login [post]
-// func loginUser(db *sql.DB) gin.HandlerFunc {
-// 	return func(c *gin.Context) {
-// 		var err error
-
-// 		defer func() {
-// 			if err != nil {
-// 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 			} else if len(c.Errors) > 0 {
-// 				c.JSON(http.StatusBadRequest, c.Errors[0])
-// 			}
-// 		}()
-
-// 		var user database.User
-// 		_, err = routers.ReadRequestBody(c, &user)
-// 		if err != nil {
-// 			c.Error(err)
-// 			return
-// 		}
-
-// 		var res string
-// 		res, err = database.LoginUser(user, db)
-// 		if err != nil {
-// 			c.Error(err)
-// 			return
-// 		}
-
-// 		c.JSON(http.StatusOK, database.UserToken{Token: res})
-
-// 	}
-// }

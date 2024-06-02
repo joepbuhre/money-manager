@@ -32,7 +32,7 @@
                 "produces": [
                     "application/json"
                 ],
-                "operationId": "create-user",
+                "operationId": "get-user",
                 "responses": {}
             },
             "post": {
@@ -40,6 +40,12 @@
                     "application/json"
                 ],
                 "operationId": "create-user",
+                "responses": {}
+            }
+        },
+        "/users/:userid": {
+            "delete": {
+                "operationId": "delete-user",
                 "responses": {}
             }
         }

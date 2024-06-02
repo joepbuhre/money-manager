@@ -30,7 +30,7 @@ func (q *Queries) AddToken(ctx context.Context, arg AddTokenParams) error {
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, name, email)
 VALUES ($1, $2, $3) 
-RETURNING id, username, name, email
+RETURNING id, username, name, email, is_superadmin
 `
 
 type CreateUserParams struct {
@@ -47,12 +47,22 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Username,
 		&i.Name,
 		&i.Email,
+		&i.IsSuperadmin,
 	)
 	return i, err
 }
 
+const deleteUser = `-- name: DeleteUser :exec
+delete from users where id = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
+	return err
+}
+
 const getUser = `-- name: GetUser :one
-SELECT id, username, name, email FROM users
+SELECT id, username, name, email, is_superadmin FROM users
 WHERE id = $1
 `
 
@@ -64,12 +74,31 @@ func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
 		&i.Username,
 		&i.Name,
 		&i.Email,
+		&i.IsSuperadmin,
+	)
+	return i, err
+}
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT id, username, name, email, is_superadmin FROM users
+WHERE username = $1
+`
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Name,
+		&i.Email,
+		&i.IsSuperadmin,
 	)
 	return i, err
 }
 
 const getUserFromToken = `-- name: GetUserFromToken :one
-select u.id, u.username, u.name, u.email 
+select u.id, u.username, u.name, u.email, u.is_superadmin 
 from users u
 inner join user_token ut on u.id = ut.user_id and ut.token = $1
 `
@@ -82,12 +111,51 @@ func (q *Queries) GetUserFromToken(ctx context.Context, token string) (User, err
 		&i.Username,
 		&i.Name,
 		&i.Email,
+		&i.IsSuperadmin,
+	)
+	return i, err
+}
+
+const getUserPermission = `-- name: GetUserPermission :one
+select u.is_superadmin, gp.can_create, gp.can_read, gp.can_update, gp.can_delete, gp.object_id
+from users u
+left join user_group ug on u.id = ug.user_id
+left join group_permissions gp on ug.group_id = gp.group_id
+where 
+    (table_name = $1 or u.is_superadmin = TRUE)
+    and u.id = $2
+`
+
+type GetUserPermissionParams struct {
+	TableName string `json:"table_name"`
+	ID        int32  `json:"id"`
+}
+
+type GetUserPermissionRow struct {
+	IsSuperadmin pgtype.Bool `json:"is_superadmin"`
+	CanCreate    pgtype.Bool `json:"can_create"`
+	CanRead      pgtype.Bool `json:"can_read"`
+	CanUpdate    pgtype.Bool `json:"can_update"`
+	CanDelete    pgtype.Bool `json:"can_delete"`
+	ObjectID     pgtype.Int4 `json:"object_id"`
+}
+
+func (q *Queries) GetUserPermission(ctx context.Context, arg GetUserPermissionParams) (GetUserPermissionRow, error) {
+	row := q.db.QueryRow(ctx, getUserPermission, arg.TableName, arg.ID)
+	var i GetUserPermissionRow
+	err := row.Scan(
+		&i.IsSuperadmin,
+		&i.CanCreate,
+		&i.CanRead,
+		&i.CanUpdate,
+		&i.CanDelete,
+		&i.ObjectID,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, username, name, email FROM users
+SELECT id, username, name, email, is_superadmin FROM users
 ORDER BY id
 `
 
@@ -105,6 +173,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.Username,
 			&i.Name,
 			&i.Email,
+			&i.IsSuperadmin,
 		); err != nil {
 			return nil, err
 		}
