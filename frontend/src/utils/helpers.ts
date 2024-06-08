@@ -1,5 +1,7 @@
+import routes from "@/router/routes";
 import { useUsers } from "@/stores/user";
 import axios, { InternalAxiosRequestConfig } from "axios";
+import { MenuItem } from "primevue/menuitem";
 
 export const getUrl = (path?: string, sparams?: URLSearchParams) => {
     const url = new URL(window.location.href);
@@ -49,3 +51,30 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     }
     return config;
 });
+
+// {
+//     label: "Documents",
+//     items: [
+//         {
+//             label: "Accounts",
+
+//             lucideIcon: WalletCardsIcon,
+//             shortcut: "⌘+S",
+//             route: "/accounts",
+//         },
+//     ],
+// },
+
+export const generateMenu = (): MenuItem[] => {
+    let routesNew: MenuItem[] = routes
+        .filter((el) => {
+            return !(el.meta?.excludeInMenu === true);
+        })
+        .map((route) => ({
+            label: route.name?.toString(),
+            lucideIcon: route.meta?.lucideIcon,
+            route: route.path,
+        }));
+
+    return routesNew;
+};

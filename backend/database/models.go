@@ -8,6 +8,26 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Account struct {
+	ID          int32            `json:"id"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	Code        string           `json:"code"`
+	Name        string           `json:"name"`
+	Description pgtype.Text      `json:"description"`
+	AccountType int32            `json:"account_type"`
+}
+
+type Budget struct {
+	ID           int32            `json:"id"`
+	CreatedAt    pgtype.Timestamp `json:"created_at"`
+	UpdatedAt    pgtype.Timestamp `json:"updated_at"`
+	Name         pgtype.Int4      `json:"name"`
+	Description  pgtype.Text      `json:"description"`
+	BudgetAmount pgtype.Numeric   `json:"budget_amount"`
+	BudgetType   int32            `json:"budget_type"`
+}
+
 type GroupPermission struct {
 	ID        int32       `json:"id"`
 	GroupID   int32       `json:"group_id"`
@@ -17,6 +37,17 @@ type GroupPermission struct {
 	CanUpdate pgtype.Bool `json:"can_update"`
 	CanDelete pgtype.Bool `json:"can_delete"`
 	ObjectID  pgtype.Int4 `json:"object_id"`
+}
+
+type Transaction struct {
+	ID          int32            `json:"id"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	AccountID   pgtype.Int4      `json:"account_id"`
+	Description pgtype.Text      `json:"description"`
+	Debit       pgtype.Numeric   `json:"debit"`
+	Credit      pgtype.Numeric   `json:"credit"`
+	Reconciled  pgtype.Bool      `json:"reconciled"`
 }
 
 type User struct {

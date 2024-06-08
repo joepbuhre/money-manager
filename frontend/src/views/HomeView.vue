@@ -1,8 +1,4 @@
-<template>hi</template>
+<template></template>
 <script setup lang="ts">
-import { computed } from "vue";
-
-import { useWindowSize } from "@vueuse/core";
-
-const { width, height } = useWindowSize();
+// put code here
 </script>

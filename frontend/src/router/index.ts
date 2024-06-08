@@ -1,16 +1,9 @@
-import { createRouter, createWebHistory } from "vue-router";
-import { useUsers } from "@/stores/user";
-import HomeView from "@/views/HomeView.vue";
+import { RouteRecordRaw, createRouter, createWebHistory } from "vue-router";
+import routes from "./routes";
 
 const router = createRouter({
     history: createWebHistory(),
-    routes: [
-        {
-            path: "/",
-            name: "home",
-            component: HomeView,
-        },
-    ],
+    routes: routes,
 });
 
 // router.beforeEach((to, from) => {

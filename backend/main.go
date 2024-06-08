@@ -76,6 +76,7 @@ func main() {
 	public.Use(middlewares.GetAuthMiddleware(env))
 	routers.AddMainRouter(public)
 	routers.AddUserRouter(public, env)
+	routers.AddAccountRouter(public, envw)
 
 	// user.AddUserRouter(public, env.db)
 

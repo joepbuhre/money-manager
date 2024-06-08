@@ -1,0 +1,10 @@
+{
+  "tailwindCSS.classAttributes": [
+    "class",
+    "className",
+    "ngClass",
+    "pt",
+    "active-class",
+    "ptOptions"
+  ]
+}
